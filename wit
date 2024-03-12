@@ -1,0 +1,56 @@
+import os
+import shutil
+import datetime
+
+def main():
+    # Kullanıcıdan yedekleme yapılacak dizin ve yedekleme dizini adlarını alma
+    source_dir = input("Yedekleme yapılacak dizini girin: ")
+    backup_dir = input("Yedekleme dizini adını girin: ")
+
+    # Kullanıcıdan kaç gün öncesine ait dosyaların silineceğini belirlemesini isteyin
+    days_ago = int(input("Kaç gün öncesine ait dosyaları saklamak istiyorsunuz? "))
+
+    # Yedekleme dizinini kontrol edin. Eğer yoksa, oluşturun.
+    if not os.path.exists(backup_dir):
+        os.makedirs(backup_dir)
+        print(f"{backup_dir} dizini oluşturuldu.")
+
+    # Yedekleme dizininde mevcut olan dosyaların isimlerine tarih ekleyerek yedekleme yapın
+    today = datetime.datetime.now()
+    backup_timestamp = today.strftime("%Y-%m-%d")
+    backup_files(source_dir, backup_dir, backup_timestamp)
+
+    # Kullanıcıdan belirtilen tarihten önceki dosyaların silinip silinmeyeceğini onaylamasını isteyin
+    confirmation = input(f"{days_ago} gün öncesine ait dosyaları silmek istiyor musunuz? (E/H): ").strip().lower()
+
+    if confirmation == "e":
+        # Eğer onay gelirse, belirtilen tarihten önceki dosyaları silin
+        delete_old_files(backup_dir, days_ago)
+        print(f"{days_ago} gün öncesine ait dosyalar silindi.")
+    else:
+        print("Dosyalar silinmedi.")
+
+def backup_files(source_dir, backup_dir, backup_timestamp):
+    # Kaynak dizinindeki dosyaları yedekleme dizinine kopyalayarak tarih ekleyin
+    for root, dirs, files in os.walk(source_dir):
+        for file in files:
+            source_path = os.path.join(root, file)
+            backup_filename = f"{os.path.splitext(file)[0]}_{backup_timestamp}{os.path.splitext(file)[1]}"
+            backup_path = os.path.join(backup_dir, backup_filename)
+            shutil.copy(source_path, backup_path)
+            print(f"{source_path} yedeklendi.")
+
+def delete_old_files(directory, days_ago):
+    # Belirtilen tarihten önceki dosyaları sil
+    today = datetime.datetime.now()
+    threshold_date = today - datetime.timedelta(days=days_ago)
+
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        creation_time = datetime.datetime.fromtimestamp(os.path.getctime(file_path))
+        if creation_time < threshold_date:
+            os.remove(file_path)
+            print(f"{file_path} silindi.")
+
+if __name__ == "__main__":
+    main()
